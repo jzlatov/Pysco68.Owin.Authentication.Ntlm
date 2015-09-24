@@ -24,7 +24,7 @@ namespace Pysco68.Owin.Authentication.Ntlm
         /// Secured store for state data
         /// </summary>
         internal ISecureDataFormat<AuthenticationProperties> StateDataFormat { get; set; }
-        
+
         /// <summary>
         /// Store states for the login attempts
         /// </summary>
@@ -61,10 +61,19 @@ namespace Pysco68.Owin.Authentication.Ntlm
         public Func<WindowsIdentity, IOwinRequest, bool> Filter { get; set; }
 
         /// <summary>
+        /// Callback is inwoked after successful Ntlm authentication.
+        /// Return true for prevent continue pipline processing.
+        /// </summary>
+        /// <remarks>
+        /// Note that the Windows identity will be disposed shortly after this function has returned
+        /// </remarks>
+        public Func<AuthenticationTicket, IOwinRequest, bool> Callback { get; set; }
+
+        /// <summary>
         /// Creates an instance of Ntlm authentication options with default values.
         /// </summary>
         public NtlmAuthenticationOptions()
-            : base(NtlmAuthenticationDefaults.AuthenticationType)
+                    : base(NtlmAuthenticationDefaults.AuthenticationType)
         {
             this.AuthenticationMode = Microsoft.Owin.Security.AuthenticationMode.Passive;
             this.CallbackPath = NtlmAuthenticationOptions.DefaultRedirectPath;

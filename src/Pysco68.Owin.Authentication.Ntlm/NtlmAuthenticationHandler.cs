@@ -65,7 +65,7 @@ namespace Pysco68.Owin.Authentication.Ntlm
                     {
                         // send the type 2 message
                         var authorization = Convert.ToBase64String(token);
-                        Response.Headers.Add("WWW-Authenticate", new[] {string.Concat("NTLM ", authorization)});
+                        Response.Headers.Add("WWW-Authenticate", new[] { string.Concat("NTLM ", authorization) });
                         Response.StatusCode = 401;
 
                         // not sucessfull
@@ -84,7 +84,7 @@ namespace Pysco68.Owin.Authentication.Ntlm
                         {
                             // If the name is something like DOMAIN\username then
                             // grab the name part (and what if it looks like username@domain?)
-                            var parts = state.WindowsIdentity.Name.Split(new[] {'\\'}, 2);
+                            var parts = state.WindowsIdentity.Name.Split(new[] { '\\' }, 2);
                             string shortName = parts.Length == 1 ? parts[0] : parts[parts.Length - 1];
 
                             // we need to create a new identity using the sign in type that 
@@ -95,6 +95,7 @@ namespace Pysco68.Owin.Authentication.Ntlm
                             {
                                 new Claim(ClaimTypes.NameIdentifier, state.WindowsIdentity.User.Value, null, Options.AuthenticationType),
                                 new Claim(ClaimTypes.Name, shortName),
+                                new Claim(ClaimTypes.WindowsAccountName, state.WindowsIdentity.Name),
                                 new Claim(ClaimTypes.Sid, state.WindowsIdentity.User.Value),
                                 new Claim(ClaimTypes.AuthenticationMethod, NtlmAuthenticationDefaults.AuthenticationType)
                             });
@@ -174,11 +175,18 @@ namespace Pysco68.Owin.Authentication.Ntlm
                 var ticket = await AuthenticateAsync();
                 if (ticket != null && ticket.Identity != null)
                 {
-                    Context.Authentication.SignIn(ticket.Properties, ticket.Identity);
-                    Response.Redirect(ticket.Properties.RedirectUri);
+                    if (Options.Callback == null)
+                    {
+                        Context.Authentication.SignIn(ticket.Properties, ticket.Identity);
+                        Response.Redirect(ticket.Properties.RedirectUri);
 
-                    // Prevent further processing by the owin pipeline.
-                    return true;
+                        // Prevent further processing by the owin pipeline.
+                        return true;
+                    }
+                    else
+                    {
+                        return Options.Callback.Invoke(ticket, Request);
+                    }
                 }
                 if (Response.Headers.ContainsKey("WWW-Authenticate"))
                 {
